@@ -1,0 +1,18 @@
+env: dev
+ocp_host: https://api.pipelines-stage.0ce8.p1.openshiftapps.com:6443
+branch: "{{ env }}"
+operator_pipeline_webhook_secret: ../../vaults/common/github-webhook-secret-preprod.txt
+kerberos_keytab: ../../vaults/common/nonprod-operatorpipelines.keytab
+
+operator_pipeline_image_tag: "v1.0.8"
+
+# how many of newest pipelineruns should be preserved on cleanup?
+preserve_after_cleanup: "5"
+
+community_signing_pipeline_route_name: community-signing-pipeline-{{suffix}}
+community_signing_pipeline_url: community-signing-pipeline-tekton-{{env}}-{{suffix}}.apps.pipelines-stage.0ce8.p1.openshiftapps.com
+
+
+nginx_basic_user_file_local_path: ../../vaults/{{ env }}/htpasswd
+nginx_proxy_service_url: https://{{ community_signing_pipeline_url }}
+nginx_proxy_url: community-signing-pipeline-{{env}}-{{suffix}}.apps.pipelines-stage.0ce8.p1.openshiftapps.com

@@ -1,0 +1,61 @@
+---
+- name: Create trigger enabling running Community signing pipeline via webhook
+  tags:
+    - webhook
+    - community-signing
+  block:
+    - name: Create Community signing pipeline Trigger Binding
+      k8s:
+        state: present
+        namespace: "{{ oc_namespace }}"
+        definition:
+          apiVersion: triggers.tekton.dev/v1alpha1
+          kind: TriggerBinding
+          metadata:
+            name: community-signing-pipeline-trigger-binding
+            labels:
+              app: community-signing-pipeline
+              suffix: "{{ suffix }}"
+              env: "{{ env }}"
+          spec:
+            params:
+              - name: env
+                value: "{{ env }}"
+
+    - name: Create Community signing pipeline Trigger Template
+      k8s:
+        state: present
+        namespace: "{{ oc_namespace }}"
+        definition:
+          apiVersion: triggers.tekton.dev/v1alpha1
+          kind: TriggerTemplate
+          metadata:
+            name: operator-hosted-pipeline-trigger-template
+            labels:
+              app: operator-pipeline
+              suffix: "{{ suffix }}"
+              env: "{{ env }}"
+          spec:
+            params:
+              - name: env
+            resourcetemplates:
+              - apiVersion: tekton.dev/v1beta1
+                kind: PipelineRun
+                metadata:
+                  generateName: community-signing-pipeline-run
+                spec:
+                  timeout: "2h"
+                  pipelineRef:
+                    name: community-signing-pipeline
+                  params:
+                    - name: env
+                      value: $(tt.params.env)
+                  workspaces:
+                    - name: pipeline
+                      volumeClaimTemplate:
+                        spec:
+                          accessModes:
+                            - ReadWriteOnce
+                          resources:
+                            requests:
+                              storage: 100Mi

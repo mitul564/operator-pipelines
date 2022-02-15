@@ -11,12 +11,24 @@ on:  # yamllint disable-line rule:truthy
       - completed
 
 jobs:
+  prepare-env:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.prepare.outputs.short_sha }}
+    steps:
+      - id: prepare
+        run: |
+          echo "::set-output name=short_sha::${GITHUB_SHA::7}"
 
   deploy-dev:
     runs-on: ubuntu-latest
+    needs:
+      - prepare-env
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: dev
+    env:
+      SHORT_SHA: ${{needs.prepare-env.outputs.short_sha}}
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
@@ -31,15 +43,19 @@ jobs:
           vault_password: ${{secrets.VAULT_PASSWORD}}
           options: |
             --inventory inventory/operator-pipeline
-            --extra-vars "env=dev operator_pipeline_image_tag=${{ github.sha }}"
+            --extra-vars "env=dev operator_pipeline_image_tag=${{ github.sha }} suffix=$SHORT_SHA"
             --skip-tags ci
             --verbose
 
   deploy-qa:
     runs-on: ubuntu-latest
+    needs:
+      - prepare-env
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: qa
+    env:
+      SHORT_SHA: ${{needs.prepare-env.outputs.short_sha}}
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
@@ -54,7 +70,7 @@ jobs:
           vault_password: ${{secrets.VAULT_PASSWORD}}
           options: |
             --inventory inventory/operator-pipeline
-            --extra-vars "env=qa operator_pipeline_image_tag=${{ github.sha }}"
+            --extra-vars "env=qa operator_pipeline_image_tag=${{ github.sha }} suffix=$SHORT_SHA"
             --skip-tags ci
             --verbose
 
@@ -62,7 +78,10 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: stage
+    env:
+      SHORT_SHA: ${{needs.prepare-env.outputs.short_sha}}
     needs:
+      - prepare-env
       - deploy-qa
       - deploy-dev
     steps:
@@ -79,7 +98,7 @@ jobs:
           vault_password: ${{secrets.VAULT_PASSWORD}}
           options: |
             --inventory inventory/operator-pipeline
-            --extra-vars "env=stage operator_pipeline_image_tag=${{ github.sha }}"
+            --extra-vars "env=stage operator_pipeline_image_tag=${{ github.sha }} suffix=$SHORT_SHA"
             --skip-tags ci
             --verbose
 
@@ -87,7 +106,10 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: prod
+    env:
+      SHORT_SHA: ${{needs.prepare-env.outputs.short_sha}}
     needs:
+      - prepare-env
       - deploy-stage
     steps:
       - uses: actions/checkout@v1
@@ -103,7 +125,7 @@ jobs:
           vault_password: ${{secrets.VAULT_PASSWORD}}
           options: |
             --inventory inventory/operator-pipeline
-            --extra-vars "env=prod operator_pipeline_image_tag=${{ github.sha }}"
+            --extra-vars "env=prod operator_pipeline_image_tag=${{ github.sha }} suffix=$SHORT_SHA"
             --skip-tags ci
             --verbose
 

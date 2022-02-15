@@ -11,3 +11,6 @@ preserve_after_cleanup: "10"
 
 operator_pipeline_hydra_username_local_path: ../../vaults/prod/hydra-username
 operator_pipeline_hydra_password_local_path: ../../vaults/prod/hydra-password
+
+community_signing_pipeline_url: community-signing-pipeline-tekton-{{env}}.apps.pipelines-prod.ijdb.p1.openshiftapps.com
+nginx_proxy_url: community-signing-pipeline-{{env}}.apps.pipelines-prod.ijdb.p1.openshiftapps.com

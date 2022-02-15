@@ -15,6 +15,7 @@ ENV=$2
 PIPELINE_IMAGE_TAG=${4:-released}
 SECRET=$(dirname "$0")/vaults/custom/ocp-token.yml
 PASSWD_FILE=$3
+SUFFIX=${5:-foo}
 
 # Initialize the environment by creating the service account and giving for it admin permissions
 initialize_environment() {
@@ -50,7 +51,9 @@ execute_playbook() {
     --vault-password-file vault-password \
     -e "oc_namespace=$NAMESPACE" \
     -e "env=$ENV" \
-    -e "custom=true"
+    -e "custom=true" \
+    -e "suffix=$SUFFIX" \
+    -v
 }
 
 pull_parent_index() {
